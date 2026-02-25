@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AuthentiCampus AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-900 flex items-center justify-center min-h-screen text-white">
+
+<div class="bg-gray-800 p-8 rounded-2xl shadow-2xl w-96 border border-blue-500">
+
+    <h1 class="text-2xl font-bold mb-2 text-center text-blue-400">
+        AuthentiCampus AI
+    </h1>
+
+    <p class="text-sm text-gray-400 mb-6 text-center">
+        Consent-First Synthetic Identity Verification
+    </p>
+
+    <!-- Consent -->
+    <div class="mb-4">
+        <input type="checkbox" id="consent" />
+        <label for="consent" class="text-sm text-gray-300">
+            I consent to temporary AI-based authenticity verification.
+        </label>
+    </div>
+
+    <!-- Upload -->
+    <input type="file" id="fileInput" class="mb-4 w-full text-gray-300" />
+
+    <button onclick="verifyFile()"
+        class="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded-lg transition">
+        Run Verification
+    </button>
+
+    <!-- Loading -->
+    <div id="loading" class="hidden mt-4 text-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-400 mx-auto"></div>
+        <p class="text-sm text-gray-400 mt-2">Analyzing anomaly patterns...</p>
+    </div>
+
+    <!-- Result -->
+    <div id="result" class="hidden mt-6">
+        <h2 class="font-semibold text-lg mb-2">Verification Result</h2>
+
+        <p id="score" class="text-lg font-bold"></p>
+        <p id="risk" class="mb-2"></p>
+
+        <ul id="indicators" class="list-disc pl-5 mt-2 text-sm text-gray-300"></ul>
+
+        <p id="explanation" class="mt-4 text-sm text-gray-400"></p>
+    </div>
+
+</div>
+
+<script>
+async function verifyFile() {
+
+    const consent = document.getElementById("consent").checked;
+    if (!consent) {
+        alert("Please provide consent before verification.");
+        return;
+    }
+
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please upload a file.");
+        return;
+    }
+
+    document.getElementById("loading").classList.remove("hidden");
+    document.getElementById("result").classList.add("hidden");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/verify", {
+        method: "POST",
+        body: formData,
+    });
+
+    const data = await response.json();
+
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+
+    document.getElementById("score").innerText =
+        "Authenticity Score: " + data.authenticityScore + "%";
+
+    const riskText = document.getElementById("risk");
+    riskText.innerText = "Risk Level: " + data.riskLevel;
+
+    if (data.riskLevel === "Low") {
+        riskText.className = "text-green-400 font-semibold";
+    } else if (data.riskLevel === "Moderate") {
+        riskText.className = "text-yellow-400 font-semibold";
+    } else {
+        riskText.className = "text-red-400 font-semibold";
+    }
+
+    const indicatorsList = document.getElementById("indicators");
+    indicatorsList.innerHTML = "";
+    data.indicators.forEach(ind => {
+        const li = document.createElement("li");
+        li.innerText = ind;
+        indicatorsList.appendChild(li);
+    });
+
+    document.getElementById("explanation").innerText =
+        "AI Explanation: The system analyzed metadata integrity, behavioral signals, and synthetic anomaly patterns. The authenticity score reflects calculated confidence based on detected irregularities.";
+}
+</script>
+
+</body>
+</html>
